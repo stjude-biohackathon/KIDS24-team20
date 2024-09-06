@@ -1,1 +1,60 @@
-# KIDS24-team1
+# Cell Segmentation, Tracking, and Analysis Pipeline
+
+This repo implements a cell segmentation, tracking, and analysis pipeline using common Python libaries.
+
+#### Usage
+
+```
+python3 segment_and_track.py --config-file=<path to an analysis YAML configuration file>
+```
+
+
+#### Configuration
+
+Analysis runs can be configured using the YAML syntax. For example:
+
+```
+##################################################################################################
+# This file defines the settings for the demo cell segmentation and tracking analysis pipeline.
+##################################################################################################
+
+---
+
+# STEP 1: Cell segmentation related settings.
+segmentation_settings:
+  # Set to True if we want to run segmentation. If False, segmentation will be skipped.
+  run_cellpose: True
+  # The path of the directory that holds the input raw image files to be segmented.
+  raw_data_dir: "./demo_data"
+  # The path of the directory that masks will be written to.
+  output_data_dir: "./demo_data/masks"
+  # The file pattern to match against (e.g. all files in raw_data_dir matching "*.tif" will be included).
+  file_pattern: ".tif"
+  # The cellpose model to use.
+  cellpose_model: "cyto3"
+  # An estimated average cell diameter, measured in pixels.
+  cell_diameter_est: 140
+  # Other settings.
+  flow_threshold: 2.19
+  min_size_mask: 40
+  cell_prob_threshold: -1
+  cell_body_channel: 0
+  cell_nucleus_channel: 2
+
+# STEP 2: Cell tracking related settings.
+tracking_settings:
+  # Set to True if we want to run tracking. If False, tracking will be skipped.
+  run_trackastra: True
+  # The path of the directory that holds the input raw image files to be tracked.
+  raw_data_dir: "./demo_data/masks"
+  # The path of the directory that tracks will be written to.
+  output_data_dir: "./demo_data/tracks"
+  # Whether to use a GFP filter.
+  use_gfp_filter: True
+  # Which model to use.
+  trackastra_model: "greedy_nodiv"
+  # The maximum distance in pixels the cells are expected to move. Keep low if mostly stationary.
+  max_track_distance: 50
+
+...
+```
