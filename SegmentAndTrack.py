@@ -39,15 +39,22 @@ for img in imgList:
     ch0 = img[:,:,:,0]
     ch1 = img[:,:,:,1]
     ch2 = img[:,:,:,2]
+
+    ##generate a master save folder that will have all the results for this image
+
+    saveFolderLoc = dataLoc.joinpath(str(imgName) + "_segmentationTrackingResults")
+    if not saveFolderLoc.exists():
+        print("Making a save folder now..")
+        saveFolderLoc.mkdir()
     
-    masks, cellPoseTime = functions.runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold)
+    masks, cellPoseTime = functions.runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, saveFolderLoc)
 
     ##now we can track the cells using Trackastra
-    masks_tracked, trackTime = functions.runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, device, dataLoc, visualizeTracks, img)
+    masks_tracked, trackTime = functions.runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, device, dataLoc, visualizeTracks, img, saveFolderLoc)
    
 
     ##now for some basic analysis of the tracked cells!
-    analyzeTime = functions.runAnalysis(masks_tracked, ch1, dataLoc, imgName)
+    analyzeTime = functions.runAnalysis(masks_tracked, ch1, dataLoc, imgName, saveFolderLoc)
 
     print("All done! Here's how long things took: cellpose segmentation took " + str(round(cellPoseTime)) +" seconds. Tracking took: " + str(round(trackTime)) + " seconds. Analysis took: " + str(analyzeTime) + " seconds. Thanks for playing along!")
 

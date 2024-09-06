@@ -1,6 +1,6 @@
 
 
-def runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold):
+def runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, saveFolderLoc):
     from skimage.io import imread, imsave
     import pathlib
     from cellpose import models, io
@@ -33,7 +33,7 @@ def runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, d
         model = models.Cellpose(gpu=True, model_type=cellPoseModelChoosen)
         masks, flows, styles, diams = model.eval(img, diameter = diameterCellPose, channels = channelsListCellPose,
                                             flow_threshold = flowThresholdCellPose, do_3D = False, min_size = minSizeCellposeMask, cellprob_threshold = cellprobThreshold)
-        imsave(cellposeMaskFolder.joinpath(str(imgName)+"_cellposeMaskResults.tif"), masks)
+        imsave(saveFolderLoc.joinpath(str(imgName)+"_cellposeMaskResults.tif"), masks)
         finish = time.time()
         cellPoseTime = finish - start
         print("Cellpose took..." +str(round(cellPoseTime))+ " seconds")
@@ -41,7 +41,7 @@ def runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, d
         return masks, cellPoseTime
     
 
-def runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, device, dataLoc, visualizeTracks, img):
+def runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, device, dataLoc, visualizeTracks, img, saveFolderLoc):
     import time        
     from trackastra.model import Trackastra
     from trackastra.tracking import graph_to_ctc, graph_to_napari_tracks
@@ -66,7 +66,7 @@ def runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, d
             outdir=outName,
     )
 
-    imsave(dataLoc.joinpath(str(imgName) + "_tracked_masks.tif"), masks_tracked)
+    imsave(saveFolderLoc.joinpath(str(imgName) + "_tracked_masks.tif"), masks_tracked)
     finish = time.time()
 
     trackTime = finish - start
@@ -86,7 +86,7 @@ def runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, d
 
 
 
-def runAnalysis(masks_tracked, ch1, dataLoc, imgName):
+def runAnalysis(masks_tracked, ch1, dataLoc, imgName, saveFolderLoc):
     import time
     import pandas as pd
     from alive_progress import alive_bar
@@ -137,8 +137,8 @@ def runAnalysis(masks_tracked, ch1, dataLoc, imgName):
                 bar()
 
     analyzeTime = round(time.time() - start)
-    dataFrame.to_excel(dataLoc.joinpath(str(imgName)+"_dataframe.xlsx"))          
-    imsave(dataLoc.joinpath(str(imgName) + "_gfpMask.tif"), GFPMask)
+    dataFrame.to_excel(saveFolderLoc.joinpath(str(imgName)+"_dataframe.xlsx"))          
+    imsave(saveFolderLoc.joinpath(str(imgName) + "_gfpMask.tif"), GFPMask)
 
     return analyzeTime
 
