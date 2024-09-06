@@ -25,11 +25,7 @@ def runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, d
     else:
         start = time.time()
         ##run cellpose
-        print("img shape is: " + str(img.shape))
-
-        cellposeMaskFolder = dataLoc.joinpath("cellPoseMasks_" + str(imgName))
-        if not cellposeMaskFolder.exists():
-                cellposeMaskFolder.mkdir()
+        #print("img shape is: " + str(img.shape))
         model = models.Cellpose(gpu=True, model_type=cellPoseModelChoosen)
         masks, flows, styles, diams = model.eval(img, diameter = diameterCellPose, channels = channelsListCellPose,
                                             flow_threshold = flowThresholdCellPose, do_3D = False, min_size = minSizeCellposeMask, cellprob_threshold = cellprobThreshold)
@@ -59,7 +55,7 @@ def runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, d
     print("Writing cell tracks....")
 
     # Write to cell tracking challenge format
-    outName = "tracked_"+str(imgName)
+    outName = saveFolderLoc.joinpath("tracked_"+str(imgName))
     ctc_tracks, masks_tracked = graph_to_ctc(
             track_graph,
             masks,
