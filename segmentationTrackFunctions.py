@@ -66,7 +66,7 @@ def runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, d
             outdir=outName,
     )
 
-    imsave(dataLoc.joinpath("linked_masked_results.tif"), masks_tracked)
+    imsave(dataLoc.joinpath(str(imgName) + "_tracked_masks.tif"), masks_tracked)
     finish = time.time()
 
     trackTime = finish - start
@@ -92,6 +92,7 @@ def runAnalysis(masks_tracked, ch1, dataLoc, imgName):
     from alive_progress import alive_bar
     import numpy as np
     from skimage.io import imread, imsave
+    from skimage.measure import label, regionprops, regionprops_table
 
     start = time.time()
     maxValue = round(np.max(masks_tracked))
@@ -99,7 +100,7 @@ def runAnalysis(masks_tracked, ch1, dataLoc, imgName):
     print(str(maxValue) + "  cells found, analyzing them now...")
     GFPMask = np.zeros(masks_tracked.shape)
 
-    columns = ["cell number", "GFP positive", "avg_area [um]", "length tracked [timesteps]", "area for each slice"]
+    columns = ["cell number","GFP positive", "GFP Value", "frame Number", "area for timestep"]
     dataFrame = pd.DataFrame(columns=columns)
 
     with alive_bar(maxValue) as bar:
@@ -127,19 +128,17 @@ def runAnalysis(masks_tracked, ch1, dataLoc, imgName):
                         if slicecount != 0:
                             imgAreaList.append(slicecount)
                             lengthTracked = tSlice
+                        #props = regionprops_table(filteredGFP[tSlice,:,:], properties=('centroid', 'orientation', 'axis_major_length', 'axis_minor_length'))
+                        #propsTable_row = pd.Dataframe(props)
+                        new_row = {"cell number": value, "GFP positive": gfpBool, "GFP Value": avgGFPValue, "frame Number": tSlice, "area for timestep": slicecount}
+                        dataFrame = pd.concat([dataFrame, pd.DataFrame([new_row])], ignore_index=True)
                 avgAreaImg = sum(imgAreaList) / round(len(imgAreaList))
-                ##change array so that it's a new row for every timestep
-                ##cell || timestep || area
-                ##1    \\    1     \\ 1
-                ##1    \\    2     \\ 3
-
-                new_row = {"cell number": value, "GFP positive": gfpBool, "avg_area [um^2]": avgAreaImg, "length tracked [timesteps]": lengthTracked, "area for each slice": imgAreaList}
-                dataFrame = pd.concat([dataFrame, pd.DataFrame([new_row])], ignore_index=True)
+                
                 bar()
 
     analyzeTime = round(time.time() - start)
     dataFrame.to_excel(dataLoc.joinpath(str(imgName)+"_dataframe.xlsx"))          
-    imsave(dataLoc.joinpath("gfpMask.tif"), GFPMask)
+    imsave(dataLoc.joinpath(str(imgName) + "_gfpMask.tif"), GFPMask)
 
     return analyzeTime
 
