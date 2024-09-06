@@ -1,10 +1,11 @@
 
-
-def runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, saveFolderLoc):
+ 
+def runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, saveFolderLoc, ch0):
     from skimage.io import imread, imsave
     import pathlib
     from cellpose import models, io
     import time
+    import numpy as np
 
     ##if we have pre-run masks we can use them here...
     if haveMasksAlready:      
@@ -96,7 +97,7 @@ def runAnalysis(masks_tracked, ch1, dataLoc, imgName, saveFolderLoc):
     print(str(maxValue) + "  cells found, analyzing them now...")
     GFPMask = np.zeros(masks_tracked.shape)
 
-    columns = ["cell number","GFP positive", "GFP Value", "frame Number", "area for timestep"]
+    columns = ["cell number","GFP positive", "GFP Value", "frame Number", "area per timestep"]
     dataFrame = pd.DataFrame(columns=columns)
 
     with alive_bar(maxValue) as bar:
@@ -126,17 +127,53 @@ def runAnalysis(masks_tracked, ch1, dataLoc, imgName, saveFolderLoc):
                             lengthTracked = tSlice
                         #props = regionprops_table(filteredGFP[tSlice,:,:], properties=('centroid', 'orientation', 'axis_major_length', 'axis_minor_length'))
                         #propsTable_row = pd.Dataframe(props)
-                        new_row = {"cell number": value, "GFP positive": gfpBool, "GFP Value": avgGFPValue, "frame Number": tSlice, "area for timestep": slicecount}
+                        new_row = {"cell number": value, "GFP positive": gfpBool, "GFP Value": avgGFPValue, "frame Number": tSlice, "area per timestep": slicecount}
                         dataFrame = pd.concat([dataFrame, pd.DataFrame([new_row])], ignore_index=True)
                 avgAreaImg = sum(imgAreaList) / round(len(imgAreaList))
                 
                 bar()
 
     analyzeTime = round(time.time() - start)
-    dataFrame.to_excel(saveFolderLoc.joinpath(str(imgName)+"_dataframe.xlsx"))          
+    dataFrame.to_csv(saveFolderLoc.joinpath(str(imgName)+"_dataframe.csv"))          
     imsave(saveFolderLoc.joinpath(str(imgName) + "_gfpMask.tif"), GFPMask)
 
     return analyzeTime
+
+
+
+def runIlastik(saveFolderLoc, ch0, imgName):
+    from pathlib import Path
+    import subprocess
+    from skimage.io import imread, imsave
+    sliceLocation = saveFolderLoc.joinpath("ch1slices")
+    if not sliceLocation.exists():
+        sliceLocation.mkdir()
+    for timestep in range(0, ch0.shape[0]):
+         tmpSlice = ch0[timestep,:,:]
+         imsave(sliceLocation.joinpath(str(imgName)+"_ch0_"+str(timestep)+".tif"), tmpSlice)
+
+    # assuming you want to process all tiff files in some folder
+    in_folder = sliceLocation
+    out_folder = sliceLocation.joinpath("stressMasks")
+    if not out_folder.exists():
+            out_folder.mkdir()
+
+    for in_file in in_folder.glob("*.tif"):
+        # generate some output file name
+        out_file = out_folder / in_file.name.replace(".tif", "_segmentation.tif")
+
+        print(f"Processing {in_file} -> {out_file}")
+        subprocess.run([
+        "/mnt/storage2/Anna/ilastik-1.4.0-Linux/run_ilastik.sh",
+        '--headless',
+        '--project=/media/ResearchHome/solecgrp/home/apittman1/Data_Analysis/biohack/SG.ilp',
+        '--export_source=simple segmentation',
+        f'--raw_data={in_file}',
+        f'--output_filename_format={out_file}' 
+        ]) 
+
+
+
 
 
 def writeParameterFile(dataLoc, imgList, cellPoseModelChoosen, diameterCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, channelsListCellPose, trackastraModel, trackastraMaxDistance):    

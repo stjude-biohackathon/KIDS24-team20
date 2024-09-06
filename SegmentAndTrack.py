@@ -4,6 +4,8 @@ import warnings
 import time
 from skimage.io import imread, imsave
 import segmentationTrackFunctions as functions
+import subprocess
+ 
 ##Supress warning when saving images
 warnings.filterwarnings("ignore", category=UserWarning, message=".*low contrast image*")
 
@@ -17,18 +19,22 @@ GFPFilter = True
 haveMasksAlready = False
 
 #### USER INPUTS #####
-dataLoc = pathlib.Path(input("Where is your data located at?\n"))
-imgList = list(dataLoc.glob("*sm.tif"))
-
 cellPoseModelChoosen = "cyto3"
 diameterCellPose = 140
 flowThresholdCellPose = 2.19
 minSizeCellposeMask = 40
 cellprobThreshold = -1
+##here we're passing through ch0 [cyotplasm channel] and ch2 [the optional nuclear channel] to aid in segmentation
 channelsListCellPose = [0,2]
+##tracking model, options are greedy, and greedy_nodiv
 trackastraModel = "greedy_nodiv"
+##max distance in pixels that the cells are allowed to move
 trackastraMaxDistance = 50
 
+dataLoc = pathlib.Path(input("Where is your data located at?\n"))
+
+
+imgList = list(dataLoc.glob("*sm.tif"))
 print(str(len(imgList)) + " files found! Processing now...")
 
 for img in imgList:
@@ -47,11 +53,15 @@ for img in imgList:
         print("Making a save folder now..")
         saveFolderLoc.mkdir()
     
-    masks, cellPoseTime = functions.runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, saveFolderLoc)
+    masks, cellPoseTime = functions.runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, saveFolderLoc, ch0)
 
-    ##now we can track the cells using Trackastra
+    # ##now we can track the cells using Trackastra
     masks_tracked, trackTime = functions.runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, device, dataLoc, visualizeTracks, img, saveFolderLoc)
    
+    ##next we can run iLastik to segment out the stress granules
+    
+    functions.runIlastik(saveFolderLoc, ch0, imgName)
+    
 
     ##now for some basic analysis of the tracked cells!
     analyzeTime = functions.runAnalysis(masks_tracked, ch1, dataLoc, imgName, saveFolderLoc)
