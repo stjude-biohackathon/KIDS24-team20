@@ -34,7 +34,7 @@ trackastraMaxDistance = 50
 dataLoc = pathlib.Path(input("Where is your data located at?\n"))
 
 
-imgList = list(dataLoc.glob("*sm2.tif"))
+imgList = list(dataLoc.glob("*sm.tif"))
 print(str(len(imgList)) + " files found! Processing now...")
 
 for img in imgList:
@@ -59,14 +59,14 @@ for img in imgList:
     masks_tracked, trackTime = functions.runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, device, dataLoc, visualizeTracks, img, saveFolderLoc)
    
     ##next we can run iLastik to segment out the stress granules
-    
+    start = time.time()
     functions.runIlastik(saveFolderLoc, ch0, imgName)
-    
+    ilastikTime = round(time.time() - start)
 
     ##now for some basic analysis of the tracked cells!
     analyzeTime = functions.runAnalysis(masks_tracked, ch1, dataLoc, imgName, saveFolderLoc)
 
-    print("All done! Here's how long things took: cellpose segmentation took " + str(round(cellPoseTime)) +" seconds. Tracking took: " + str(round(trackTime)) + " seconds. Analysis took: " + str(analyzeTime) + " seconds. Thanks for playing along!")
+    print("All done! Here's how long things took: cellpose segmentation took: " + str(round(cellPoseTime)) +" seconds. Tracking took: " + str(round(trackTime)) + " seconds. iLastik took: "+str(ilastikTime)+" seconds. Analysis took: " + str(analyzeTime) + " seconds. Thanks for playing along!")
 
 
 functions.writeParameterFile(dataLoc, imgList, cellPoseModelChoosen, diameterCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, channelsListCellPose, trackastraModel, trackastraMaxDistance)
