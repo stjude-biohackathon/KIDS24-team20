@@ -34,7 +34,7 @@ trackastraMaxDistance = 50
 dataLoc = pathlib.Path(input("Where is your data located at?\n"))
 
 
-imgList = list(dataLoc.glob("*sm.tif"))
+imgList = list(dataLoc.glob("*sm2.tif"))
 print(str(len(imgList)) + " files found! Processing now...")
 
 for img in imgList:
