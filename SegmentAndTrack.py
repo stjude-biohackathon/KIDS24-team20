@@ -2,6 +2,7 @@ import torch
 import pathlib
 import warnings
 import time
+from skimage.io import imread, imsave
 import segmentationTrackFunctions as functions
 ##Supress warning when saving images
 warnings.filterwarnings("ignore", category=UserWarning, message=".*low contrast image*")
@@ -48,8 +49,9 @@ for img in imgList:
     ##now for some basic analysis of the tracked cells!
     analyzeTime = functions.runAnalysis(masks_tracked, ch1, dataLoc, imgName)
 
-    functions.writeParameterFile(dataLoc, imgList, cellPoseModelChoosen, diameterCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, channelsListCellPose, trackastraModel, trackastraMaxDistance)
-
     print("All done! Here's how long things took: cellpose segmentation took " + str(round(cellPoseTime)) +" seconds. Tracking took: " + str(round(trackTime)) + " seconds. Analysis took: " + str(analyzeTime) + " seconds. Thanks for playing along!")
+
+
+functions.writeParameterFile(dataLoc, imgList, cellPoseModelChoosen, diameterCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, channelsListCellPose, trackastraModel, trackastraMaxDistance)
 
 
