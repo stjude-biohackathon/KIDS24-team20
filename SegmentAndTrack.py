@@ -4,11 +4,10 @@ import warnings
 import time
 from skimage.io import imread, imsave
 import segmentationTrackFunctions as functions
-import subprocess
+import subprocess 
  
 ##Supress warning when saving images
 warnings.filterwarnings("ignore", category=UserWarning, message=".*low contrast image*")
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 #### BOOLEANS ####
@@ -45,12 +44,18 @@ for img in imgList:
     ch0 = img[:,:,:,0]
     ch1 = img[:,:,:,1]
     ch2 = img[:,:,:,2]
-
-    ##generate a master save folder that will have all the results for this image
+##generate a master save folder that will have all the results for this image
 
     saveFolderLoc = dataLoc.joinpath(str(imgName) + "_segmentationTrackingResults")
     if not saveFolderLoc.exists():
         print("Making a save folder now..")
+        saveFolderLoc.mkdir()
+    else:
+        i = 0
+        while saveFolderLoc.exists():
+            i += 1
+            saveFolderName = saveFolderLoc.name+"_" + str(i)
+            saveFolderLoc = dataLoc.joinpath(saveFolderName)
         saveFolderLoc.mkdir()
     
     masks, cellPoseTime = functions.runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, diameterCellPose, channelsListCellPose, flowThresholdCellPose, minSizeCellposeMask, cellprobThreshold, saveFolderLoc, ch0)
@@ -59,8 +64,11 @@ for img in imgList:
     masks_tracked, trackTime = functions.runTrackastra(ch0, masks, trackastraModel, trackastraMaxDistance, imgName, device, dataLoc, visualizeTracks, img, saveFolderLoc)
    
     ##next we can run iLastik to segment out the stress granules
+    ##point the program to where both the run_ilastik program file is and where the individual pre-trained project file is
     start = time.time()
-    functions.runIlastik(saveFolderLoc, ch0, imgName)
+    iLastikProgramLocation = "/mnt/storage2/Anna/ilastik-1.4.0-Linux/run_ilastik.sh"
+    iLastikFileLocation = "/media/ResearchHome/solecgrp/home/apittman1/Data_Analysis/biohack/SG.ilp"
+    functions.runIlastik(saveFolderLoc, ch0, imgName, iLastikProgramLocation, iLastikFileLocation)
     ilastikTime = round(time.time() - start)
 
     ##now for some basic analysis of the tracked cells!

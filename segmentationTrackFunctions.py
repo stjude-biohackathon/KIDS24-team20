@@ -6,7 +6,7 @@ def runCellpose(haveMasksAlready, dataLoc, imgName, cellPoseModelChoosen, img, d
     from cellpose import models, io
     import time
     import numpy as np
-
+ 
     ##if we have pre-run masks we can use them here...
     if haveMasksAlready:      
         maskLoc = dataLoc.joinpath("cellPoseMasks")
@@ -141,7 +141,7 @@ def runAnalysis(masks_tracked, ch1, dataLoc, imgName, saveFolderLoc):
 
 
 
-def runIlastik(saveFolderLoc, ch0, imgName):
+def runIlastik(saveFolderLoc, ch0, imgName, iLastikProgramLocation, iLastikFileLocation):
     from pathlib import Path
     import subprocess
     from skimage.io import imread, imsave
@@ -164,9 +164,9 @@ def runIlastik(saveFolderLoc, ch0, imgName):
 
         print(f"Processing {in_file} -> {out_file}")
         subprocess.run([
-        "/mnt/storage2/Anna/ilastik-1.4.0-Linux/run_ilastik.sh",
+        iLastikProgramLocation,
         '--headless',
-        '--project=/media/ResearchHome/solecgrp/home/apittman1/Data_Analysis/biohack/SG.ilp',
+        f'--project=%s' %iLastikFileLocation,
         '--export_source=simple segmentation',
         f'--raw_data={in_file}',
         f'--output_filename_format={out_file}' 
